@@ -98,3 +98,41 @@
         features-enabled: (list 10 bool) ;; Tier-specific features
     }
 )
+
+;; PRIVATE UTILITIES
+
+;; Determine user tier based on stake amount
+(define-private (get-tier-info (stake-amount uint))
+    (if (>= stake-amount u10000000)  ;; Platinum Tier (10M+ STX)
+        {tier-level: u3, reward-multiplier: u200}
+        (if (>= stake-amount u5000000) ;; Gold Tier (5M+ STX)
+            {tier-level: u2, reward-multiplier: u150}
+            {tier-level: u1, reward-multiplier: u100} ;; Silver Tier
+        )
+    )
+)
+
+;; Calculate time-lock bonus multiplier
+(define-private (calculate-lock-multiplier (lock-period uint))
+    (if (>= lock-period u8640)     ;; 60-day lock: 1.5x
+        u150                       
+        (if (>= lock-period u4320) ;; 30-day lock: 1.25x
+            u125                   
+            u100                   ;; No lock: 1x
+        )
+    )
+)
+
+;; Reward calculation engine
+(define-private (calculate-rewards (user principal) (blocks uint))
+    (let (
+        (staking-position (unwrap! (map-get? StakingPositions user) u0))
+        (user-position (unwrap! (map-get? UserPositions user) u0))
+        (stake-amount (get amount staking-position))
+        (base-rate (var-get base-reward-rate))
+        (multiplier (get rewards-multiplier user-position))
+        )
+        ;; Formula: (stake * rate * multiplier * blocks) / 1M
+        (/ (* (* (* stake-amount base-rate) multiplier) blocks) u14400000)
+    )
+)
