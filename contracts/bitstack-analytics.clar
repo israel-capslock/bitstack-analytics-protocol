@@ -59,3 +59,42 @@
         minimum-votes: uint          ;; Quorum threshold
     }
 )
+
+;; User Financial Positions
+(define-map UserPositions
+    principal  ;; User principal
+    {
+        total-collateral: uint,     ;; Total deposited assets
+        total-debt: uint,           ;; Outstanding obligations
+        health-factor: uint,        ;; Risk ratio (collateral/debt)
+        last-updated: uint,          ;; Last activity block
+        stx-staked: uint,           ;; Total STX committed
+        analytics-tokens: uint,     ;; ANALYTICS-TOKEN balance
+        voting-power: uint,         ;; Governance influence metric
+        tier-level: uint,           ;; Current privilege tier (1-3)
+        rewards-multiplier: uint     ;; Active rewards multiplier
+    }
+)
+
+;; Staking Position Details
+(define-map StakingPositions
+    principal  ;; User principal
+    {
+        amount: uint,               ;; STX staked amount
+        start-block: uint,          ;; Position creation block
+        last-claim: uint,            ;; Last rewards harvest
+        lock-period: uint,           ;; Commitment duration
+        cooldown-start: (optional uint), ;; Withdrawal initiation time
+        accumulated-rewards: uint    ;; Pending rewards balance
+    }
+)
+
+;; Tier Configuration Matrix
+(define-map TierLevels
+    uint  ;; Tier ID (1=Silver, 2=Gold, 3=Platinum)
+    {
+        minimum-stake: uint,         ;; Tier entry threshold
+        reward-multiplier: uint,     ;; Base rewards multiplier
+        features-enabled: (list 10 bool) ;; Tier-specific features
+    }
+)
