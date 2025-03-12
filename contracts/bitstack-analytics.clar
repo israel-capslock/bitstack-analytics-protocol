@@ -317,3 +317,63 @@
         (ok proposal-id)
     )
 )
+
+(define-public (vote-on-proposal (proposal-id uint) (vote-for bool))
+    (let
+        (
+            (proposal (unwrap! (map-get? Proposals { proposal-id: proposal-id }) ERR-INVALID-PROTOCOL))
+            (user-position (unwrap! (map-get? UserPositions tx-sender) ERR-NOT-AUTHORIZED))
+            (voting-power (get voting-power user-position))
+            (max-proposal-id (var-get proposal-count))
+        )
+        (asserts! (< stacks-block-height (get end-block proposal)) ERR-NOT-AUTHORIZED)
+        (asserts! (and (> proposal-id u0) (<= proposal-id max-proposal-id)) ERR-INVALID-PROTOCOL)
+        
+        (map-set Proposals { proposal-id: proposal-id }
+            (merge proposal
+                {
+                    votes-for: (if vote-for (+ (get votes-for proposal) voting-power) (get votes-for proposal)),
+                    votes-against: (if vote-for (get votes-against proposal) (+ (get votes-against proposal) voting-power))
+                }
+            )
+        )
+        (ok true)
+    )
+)
+
+;; ADMIN CONTROLS
+
+;; Emergency Protocol Pause
+(define-public (pause-contract)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (var-set contract-paused true)
+        (ok true)
+    )
+)
+
+;; Protocol Resume
+(define-public (resume-contract)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (var-set contract-paused false)
+        (ok true)
+    )
+)
+
+;; READ-ONLY INTERFACE
+
+;; Protocol Ownership
+(define-read-only (get-contract-owner)
+    (ok CONTRACT-OWNER)
+)
+
+;; STX Liquidity Pool
+(define-read-only (get-stx-pool)
+    (ok (var-get stx-pool))
+)
+
+;; Governance Activity
+(define-read-only (get-proposal-count)
+    (ok (var-get proposal-count))
+)
