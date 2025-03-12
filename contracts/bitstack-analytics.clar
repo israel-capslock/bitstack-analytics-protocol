@@ -286,3 +286,34 @@
         (ok true)
     )
 )
+
+;; GOVERNANCE ENGINE
+
+;; Proposal Creation
+(define-public (create-proposal (description (string-utf8 256)) (voting-period uint))
+    (let
+        (
+            (user-position (unwrap! (map-get? UserPositions tx-sender) ERR-NOT-AUTHORIZED))
+            (proposal-id (+ (var-get proposal-count) u1))
+        )
+        (asserts! (>= (get voting-power user-position) u1000000) ERR-NOT-AUTHORIZED)
+        (asserts! (is-valid-description description) ERR-INVALID-PROTOCOL)
+        (asserts! (is-valid-voting-period voting-period) ERR-INVALID-PROTOCOL)
+        
+        (map-set Proposals { proposal-id: proposal-id }
+            {
+                creator: tx-sender,
+                description: description,
+                start-block: stacks-block-height,
+                end-block: (+ stacks-block-height voting-period),
+                executed: false,
+                votes-for: u0,
+                votes-against: u0,
+                minimum-votes: u1000000
+            }
+        )
+        
+        (var-set proposal-count proposal-id)
+        (ok proposal-id)
+    )
+)
